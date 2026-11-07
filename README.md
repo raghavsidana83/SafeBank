@@ -31,7 +31,17 @@ A professional and responsive expense management web application that helps user
 
 ## 📸 Project Screenshots
 
-Screenshots will be added soon.
+### Login & Registration
+![Login](login.png)
+
+### Dashboard – Light Mode
+![Dashboard](dashboard.png)
+
+### Transaction History
+![Transaction History](transactions.png)
+
+### Dashboard – Dark Mode
+![Dark Mode](dark-mode.png)
 
 ## 🚀 Deployment
 
