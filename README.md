@@ -1,27 +1,24 @@
-# 🏦 SafeBank – Expense Manager
+# SafeBank – Expense Manager
 
-A responsive and user-friendly Expense Management Application built using HTML, CSS, JavaScript, Bootstrap 5 and Axios.
+A professional and responsive expense management web application that helps users manage their income, expenses, and account balance through a simple dashboard.
 
-SafeBank helps users manage their account balance, record income and expenses, and track their financial transactions through an interactive dashboard.
+## 🌐 Live Demo
 
-## 🚀 Features
+[Open SafeBank](https://joyful-shortbread-967490.netlify.app/)
 
-- User Registration and Login
-- Account Dashboard
-- Opening Balance Display
+## ✨ Features
+
+- User Registration
+- Mobile Number Login
+- Personal Dashboard
+- Opening Balance Management
 - Add Credit Transactions
 - Add Debit Transactions
 - Transaction History
-- Search Transactions by Note
-- Filter Transactions by Type
-- Filter Transactions by Date
-- Transaction Count
-- Loading Indicator
-- Credit and Debit Form Validation
-- Duplicate Submission Prevention
-- Dark Mode and Light Mode
-- Responsive Bootstrap UI
-- API Integration using Axios
+- Transaction Search and Filtering
+- Dark and Light Mode
+- Responsive Design
+- Logout Functionality
 
 ## 🛠️ Technologies Used
 
@@ -32,43 +29,19 @@ SafeBank helps users manage their account balance, record income and expenses, a
 - Axios
 - REST API Integration
 
-## 📂 Project Structure
+## 📸 Project Screenshots
 
-```text
-SafeBank/
-│
-├── index.html
-├── dash.html
-├── theme.css
-├── theme.js
-└── README.md
-```
+Screenshots will be added soon.
 
-## ⚙️ How to Run
+## 🚀 Deployment
 
-1. Clone this repository:
-
-   `git clone https://github.com/raghavsidana83/SafeBank.git`
-
-2. Open the project folder.
-3. Run `index.html` using VS Code Live Server.
-4. Register or log in to explore the dashboard.
-
-## 🔗 API Integration
-
-SafeBank uses external APIs for user registration, login, opening balance retrieval, and transaction management.
-
-Axios is used to make HTTP requests and process API responses.
-
-## 🎯 Project Objective
-
-The objective of SafeBank is to build a practical expense management application while learning frontend development, JavaScript programming, API integration, and responsive UI design.
+The project is deployed using Netlify and connected to GitHub for source code management.
 
 ## 👨‍💻 Developer
 
 **Raghav Sidana**
 
-- GitHub: https://github.com/raghavsidana83
+- GitHub: [raghavsidana83](https://github.com/raghavsidana83)
 
 ---
 
