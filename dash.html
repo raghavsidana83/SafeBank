@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MyBank | Expense Manager</title>
+
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+
+    <!-- Bootstrap JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        let creditSubmitting=false;
+        let debitSubmitting=false;
+
+        function getdata() {
+
+            let uid = localStorage.getItem("expid");
+            let unm = localStorage.getItem("expunm");
+
+            document.getElementById("id").innerHTML = uid;
+            document.getElementById("nm").innerHTML = unm;
+
+            axios.get("https://codingshika.com/APP/EXP/opbal_list.php?uid=" + uid)
+                .then(res => {
+
+                    let bal = res.data.posts.post[0]['OPBAL'];
+
+                    document.getElementById("bal").innerHTML = bal;
+
+                });
+                document.getElementById("loadingTransactions").style.display="block";
+
+                axios.get("https://codingshika.com/APP/EXP/transaction_list.php?uid="+uid)
+                .then(res=>{
+                let l=res.data.posts.post.length;
+                let rows="";
+                let crdt=0;
+                let dbt=0;
+                for(let i = 0; i < l; i++){
+                    crdt += Number(res.data.posts.post[i]['CREDIT']);
+                    dbt += Number(res.data.posts.post[i]['DEBIT']);
+                    console.log(crdt);
+                    console.log(dbt);
+                document.getElementById("c").innerHTML=crdt;
+                document.getElementById("d").innerHTML=dbt;
+                    rows += `<tr>
+                    <td>${res.data.posts.post[i]['DATE']}</td>
+                    <td>${res.data.posts.post[i]['NOTE']}</td>
+                    <td>${res.data.posts.post[i]['DEBIT']}</td>
+                    <td>${res.data.posts.post[i]['CREDIT']}</td>
+                    <td>${res.data.posts.post[i]['CLBAL']}</td>
+                    </tr>`;                
+                }
+                document.getElementById("tdata").innerHTML=rows;
+                filterTransactions();
+                })
+                .catch(error=>{
+                    alert("Unable to load trasactions. please try again.");
+                })
+                .finally(()=>{
+                    document.getElementById("loadingTransactions").style.display="none";
+                });
+        }
+ 
+    function filterTransactions() {
+    let search = document.getElementById("searchTransaction").value.toLowerCase();
+    let type = document.getElementById("transactionType").value;
+    let date = document.getElementById("transactionDate").value;
+
+    let rows = document.querySelectorAll("#tdata tr");
+    let visibleRows = 0;
+
+    rows.forEach(row => {
+        let rowDate = row.cells[0].textContent.trim();
+        let note = row.cells[1].textContent.toLowerCase();
+        let debit = Number(row.cells[2].textContent.trim());
+        let credit = Number(row.cells[3].textContent.trim());
+
+        let searchMatch = note.includes(search);
+        let dateMatch = date === "" || rowDate === date;
+
+        let typeMatch =
+            type === "all" ||
+            (type === "credit" && credit > 0) ||
+            (type === "debit" && debit > 0);
+
+        if (searchMatch && dateMatch && typeMatch) {
+            row.style.display = "";
+            visibleRows++;
+        } else {
+            row.style.display = "none";
+        }
+    });
+
+    document.getElementById("noTransactions").style.display =
+        visibleRows === 0 ? "" : "none";
+    document.getElementById("transactionCount").textContent=visibleRows;
+}
+        function clearFilters(){
+            document.getElementById("searchTransaction").value="";
+            document.getElementById("transactionType").value="all";
+            document.getElementById("transactionDate").value="";
+
+            filterTransactions();
+        }
+        
+        function validateTransaction(date,amount,note){
+            if(date===""){
+                alert("Please select transaction date.");
+                return false;
+            }
+            if(amount==="" || isNaN(amount) || Number(amount)<=0){
+                alert("Please enter a valid amount greater than 0.");
+                return false;
+            }
+            if(note.trim().length<3){
+                alert("Transaction note must contain at least 3 characters.");
+                return false;
+            }
+            return true;
+        }
+        function logout() {
+                   localStorage.removeItem("expid");
+                   localStorage.removeItem("expunm");
+
+                   window.location.href = "index.html";
+        }
+        function crdt(){
+                    let uid=localStorage.getItem("expid");
+                    let dt=document.getElementById("dt").value;
+                    let camt=document.getElementById("camt").value;
+                    let cnote=document.getElementById("cnote").value;
+                    if(!validateTransaction(dt,camt,cnote)){
+                        return;
+                    }
+                    if(creditSubmitting) return;
+                    creditSubmitting=true;
+                    let btn=document.getElementById("creditSubmitBtn");
+                    btn.disabled=true;
+                    btn.innerHTML="Processing...";
+                    axios("https://codingshika.com/APP/EXP/insert_credit.php?uid="+uid+"&date="+dt+"&note="+cnote+"&debit="+0+"&credit="+camt)
+                    .then(res=>{
+                        if(res.data.posts.status=="200"){
+                            alert("₹ " + camt + " Credit Added Successfully!");
+                            let modalElement=document.getElementById("creditModal");
+                            let modal=bootstrap.Modal.getInstance(modalElement);
+                            modal.hide();
+                            window.location.href="dash.html";
+                        }else{
+                            alert("Error Adding Credit");
+                        }
+
+                    })
+                    .catch(error => {
+                        console.log("Full Error:", error);
+                        console.log("Error Response:", error.response);
+                        console.log("Error Message:", error.message);
+
+                        alert("Check Console for API Error");
+                    })
+                    .finally(()=>{
+                        creditSubmitting=false;
+                        btn.disabled=false;
+                        btn.innerHTML="Add Credit";
+                    });
+
+                    
+                    
+                    
+        }
+        function dbt(){
+                    let uid=localStorage.getItem("expid");
+                    let dt=document.getElementById("ddt").value;
+                    let damt=document.getElementById("damt").value;
+                    let dnote=document.getElementById("dnote").value;
+                    if(!validateTransaction(dt,damt,dnote)){
+                        return;
+                    }
+                    if(debitSubmitting) return;
+                    debitSubmitting=true;
+                    let btn=document.getElementById("debitSubmitBtn");
+                    btn.disabled=true;
+                    btn.innerHTML="Processing...";
+                    axios("https://codingshika.com/APP/EXP/insert_debit.php?uid="+uid+"&date="+dt+"&note="+dnote+"&debit="+damt+"&credit="+0)
+                    .then(res=>{
+                        if(res.data.posts.status=="200"){
+                            alert("₹ " + damt + " Debit Added Successfully!");
+                            window.location.href="dash.html";
+                        }else{
+                            alert("Error Adding Debit");
+                        }
+                    })
+                    .catch(error => {
+                        console.log("Full Error:", error);
+                        console.log("Error Response:", error.response);
+                        console.log("Error Message:", error.message);
+
+                        alert("Check Console for API Error");
+
+                    })
+                    .finally(()=>{
+                        debitSubmitting=false;
+                        btn.disabled=false;
+                        btn.innerHTML="Add Debit";
+                    });
+
+        }
+
+    </script>
+
+</head>
+
+<body onload="getdata()" class="bg-light">
+    <button onclick="toggleTheme()" id="themeBtn"
+    class="theme-toggle"
+    title="Switch theme"
+    aria-label="Switch theme">
+    </button>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark py-3"
+         style="background-color: #102a43;">
+
+        <div class="container">
+
+            <a class="navbar-brand fw-bold fs-4" href="#">
+                🏦 SafeBank
+            </a>
+
+            <div class="d-flex align-items-center gap-4">
+
+                <div class="text-white">
+                    <div>
+                        Welcome, <span id="nm"></span>
+                    </div>
+
+                    <div>
+                        Account ID: <span id="id"></span>
+                    </div>
+                </div>
+
+                <button class="btn btn-danger btn-lg" onclick="logout()">
+                    Logout
+                </button>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+
+    <!-- Main Dashboard -->
+    <div class="container py-5">
+
+
+        <!-- Dashboard Heading -->
+        <div class="d-flex justify-content-between align-items-center
+                    flex-wrap gap-3 mb-4">
+
+            <div>
+
+                <h1 class="fw-bold" style="color: #102a43;">
+                    Dashboard Overview
+                </h1>
+
+                <p class="text-secondary fs-5 mb-0">
+                    Manage your income, expenses and account balance.
+                </p>
+
+            </div>
+
+            <button class="btn btn-primary fw-bold px-3">
+                Personal Account
+            </button>
+
+        </div>
+
+
+        <!-- Summary Cards -->
+        <div class="row g-4 mb-4">
+
+
+            <!-- Opening Balance -->
+            <div class="col-md-4">
+
+                <div class="card border-0 border-start border-5
+                            border-primary shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <h5 class="text-secondary">
+                            Opening Balance
+                        </h5>
+
+                        <h1 class="fw-bold text-primary my-3">
+                            ₹ <span id="bal">0.00</span>
+                        </h1>
+
+                        <p class="text-secondary mb-0">
+                            Your initial account balance
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Total Credit -->
+            <div class="col-md-4">
+
+                <div class="card border-0 border-start border-5
+                            border-success shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <h5 class="text-secondary">
+                            Total Credit
+                        </h5>
+
+                        <h1 id="c" class="fw-bold text-success my-3">
+                            ₹ 0.00
+                        </h1>
+
+                        <p class="text-secondary mb-0">
+                            Money received
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Total Debit -->
+            <div class="col-md-4">
+
+                <div class="card border-0 border-start border-5
+                            border-danger shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <h5 class="text-secondary">
+                            Total Debit
+                        </h5>
+
+                        <h1 id="d" class="fw-bold text-danger my-3">
+                            ₹ 0.00
+                        </h1>
+
+                        <p class="text-secondary mb-0">
+                            Money spent
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Account Operations -->
+        <h2 class="fw-bold mb-4" style="color: #102a43;">
+            Account Operations
+        </h2>
+
+
+        <div class="row g-4">
+
+
+            <!-- Add Credit -->
+            <div class="col-md-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex align-items-center gap-4">
+
+                            <div class="bg-success-subtle text-success
+                                        rounded-3 d-flex align-items-center
+                                        justify-content-center fw-bold fs-2"
+                                 style="width: 65px; height: 75px;">
+                                +
+                            </div>
+
+                            <div>
+
+                                <h3 class="fw-bold fs-4">
+                                    Add Credit
+                                </h3>
+
+                                <p class="text-secondary fs-5">
+                                    Add money received to your account.
+                                </p>
+
+                                <button class="btn btn-success btn-lg"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#creditModal">
+                                    + Add Credit
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- Add Debit -->
+            <div class="col-md-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex align-items-center gap-4">
+
+                            <div class="bg-danger-subtle text-danger
+                                        rounded-3 d-flex align-items-center
+                                        justify-content-center fw-bold fs-2"
+                                 style="width: 65px; height: 75px;">
+                                -
+                            </div>
+
+                            <div>
+
+                                <h3 class="fw-bold fs-4">
+                                    Add Debit
+                                </h3>
+
+                                <p class="text-secondary fs-5">
+                                    Record your expenses and payments.
+                                </p>
+
+                                <button class="btn btn-danger btn-lg"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#debitModal">
+                                    - Add Debit
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Transaction History -->
+        <div class="card border-0 shadow-sm rounded-4 mt-5">
+
+            <div class="card-body p-4">
+
+
+                <!-- Transaction Heading -->
+                <div class="d-flex justify-content-between
+                            align-items-center flex-wrap gap-3 mb-4">
+
+                    <div>
+
+                        <h2 class="fw-bold mb-2"
+                            style="color: #102a43;">
+                            Transaction History
+                        </h2>
+
+                        <p class="text-secondary fs-5 mb-0">
+                            View your recent account transactions.
+                        </p>
+
+                    </div>
+
+                    <button class="btn btn-outline-primary btn-lg px-4">
+                        View All
+                    </button>
+
+                </div>
+                <!-- Transaction Search and Filters -->
+                <div class="row g-2 mb-4 w-100">
+
+                        <!-- Search -->
+                        <div class="col-md-5">
+                            <input type="text"
+                                   id="searchTransaction"
+                                   class="form-control form-control-lg"
+                                   placeholder="🔍 Search by transaction note..."
+                                   oninput="filterTransactions()">
+                        </div>
+
+                        <!-- Type Filter -->
+                        <div class="col-md-3">
+                            <select id="transactionType"
+                                    class="form-select form-select-lg"
+                                    onchange="filterTransactions()">
+
+                                <option value="all">All Transactions</option>
+                                <option value="credit">Credit Only</option>
+                                <option value="debit">Debit Only</option>
+
+                            </select>
+                        </div>
+                        <!-- Date Filter -->
+                        <div class="col-md-4">
+                            <input type="date"
+                                   id="transactionDate"
+                                   class="form-control form-control-lg"
+                                   onchange="filterTransactions()">
+                        </div>
+                        <div class="text-end mb-3">
+                            <button class="btn btn-outline-secondary"
+                            onclick="clearFilters()">
+                            Clear Filters
+                            </button>
+                        </div>
+
+                        
+
+                    </div>
+
+
+                <div class="mb-3">
+                    <span class="text-secondary">
+                        Showing <strong id="transactionCount">0</strong> transactions
+                    </span>
+                </div>
+                <div id="loadingTransactions" class="text-center py-3"
+                style="display: none;">
+                <div class="spinner-border text-primary"></div>
+                <p class="text-secondary mt-2 mb-0">
+                    Loading transactions...
+                </p>
+                </div>
+
+
+                <!-- Transaction Table -->
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle mb-0">
+
+                        <thead class="table-light">
+
+                            <tr>
+
+                                <th class="py-3 text-secondary">
+                                    Date
+                                </th>
+
+                                <th class="py-3 text-secondary">
+                                    NOTE
+                                </th>
+
+                                <th class="py-3 text-secondary">
+                                    DEBIT
+                                </th>
+
+                                <th class="py-3 text-secondary">
+                                    CREDIT
+                                </th>
+
+                                <th class="py-3 text-secondary">
+                                    CLBAL
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="tdata">
+
+                        </tbody>
+                        <tbody id="noTransactions" style="display: none;">
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <h5 class="text-secondary">No Transactions Found</h5>
+                                    <p class="text-secondary mb-6">
+                                        Try changing your search or filter.
+                                    </p>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+
+                <!-- Transaction Footer -->
+                <div class="d-flex justify-content-between
+                            align-items-center flex-wrap gap-2 mt-4">
+
+                    <small class="text-secondary">
+                        Transaction records
+                    </small>
+
+                    <button class="btn btn-primary px-4">
+                        View All Transactions
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- Footer -->
+        <div class="text-center text-secondary mt-5">
+
+            <p>
+                © 2026 SafeBank
+                | All Rights Reserved
+            </p>
+
+        </div>
+
+
+    </div>
+    <!-- Credit Modal -->
+<div class="modal fade" id="creditModal" tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow rounded-4">
+
+            <div class="modal-header bg-success text-white">
+
+                <h5 class="modal-title fw-bold">
+                    + Add Credit
+                </h5>
+
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+
+            </div>
+
+            <div class="modal-body p-4">
+
+                
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Date
+                        </label>
+
+                        <input type="date" id="dt" class="form-control"
+                               required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Credit Amount (₹)
+                        </label>
+
+                        <input type="number" id="camt" class="form-control"
+                               placeholder="Enter credit amount"
+                               min="0.01" step="0.01" required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Note
+                        </label>
+
+                        <textarea class="form-control" id="cnote" rows="3"
+                                  placeholder="Enter transaction note"
+                                  required></textarea>
+
+                    </div>
+
+                    <div class="d-grid">
+
+                        <button type="button"
+                        id="creditSubmitBtn"
+                                 onclick="crdt()"
+                                class="btn btn-success btn-lg">
+                            Add Credit
+                        </button>
+
+                    </div>
+
+                
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Debit Modal -->
+<div class="modal fade" id="debitModal" tabindex="-1">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content border-0 shadow rounded-4">
+
+            <div class="modal-header bg-danger text-white">
+
+                <h5 class="modal-title fw-bold">
+                    - Add Debit
+                </h5>
+
+                <button type="button" class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+
+            </div>
+
+            <div class="modal-body p-4">
+
+                
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Date
+                        </label>
+
+                        <input type="date" id="ddt" class="form-control"
+                               required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Debit Amount (₹)
+                        </label>
+
+                        <input type="number" id="damt" class="form-control"
+                               placeholder="Enter debit amount"
+                               min="0.01" step="0.01" required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Note
+                        </label>
+
+                        <textarea class="form-control" id="dnote" rows="3"
+                                  placeholder="Enter transaction note"
+                                  required></textarea>
+
+                    </div>
+
+                    <div class="d-grid">
+
+                        <button type="button"
+                                id="debitSubmitBtn"
+                                onclick="dbt()"
+                                class="btn btn-danger btn-lg">
+                            Add Debit
+                        </button>
+
+                    </div>
+
+                
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script src="theme.js"></script>
+
+</body>
+
+</html>
