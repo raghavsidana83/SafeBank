@@ -47,6 +47,24 @@ A professional and responsive expense management web application that helps user
 
 The project is deployed using Netlify and connected to GitHub for source code management.
 
+## 📁 Project Structure
+
+- index.html – Login and Registration
+- dash.html – Main Dashboard
+- theme.css – Custom Styling
+- theme.js – Dark/Light Mode
+- README.md – Project Documentation
+
+## 🔗 API Integration
+
+SafeBank uses Axios to communicate with external APIs for:
+
+- User Registration
+- User Login
+- Opening Balance Retrieval
+- Credit and Debit Transactions
+- Transaction History
+
 ## 👨‍💻 Developer
 
 **Raghav Sidana**
